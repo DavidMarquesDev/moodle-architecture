@@ -924,6 +924,21 @@ mod/videoaula/
     └── moodle2/               # suporte a backup/restore
 ```
 
+### 4.5 Status atual do projeto (moodle-core)
+
+Com base na implementação atual do repositório, o projeto de portfólio já contempla os dois cenários avançados do roteiro:
+
+- `blocks/meu_dashboard` (Dashboard Customizado para Alunos) ✅
+- `mod/videoaula` (Integração com API Externa) ✅
+
+Checklist de conclusão técnica:
+
+- Estrutura de plugin `block_` implementada com AMD, template Mustache, SCSS, serviços e Web Services ✅
+- Estrutura de plugin `mod_` implementada com formulário, callbacks, serviços, integração Zoom e Web Services ✅
+- Suporte de backup/restore (`mod/videoaula/backup/moodle2`) implementado ✅
+- Boas práticas de API Moodle aplicadas (capabilities, contexto, parâmetros externos e strings de idioma) ✅
+- Próxima etapa para finalização de portfólio: publicação no GitHub com README detalhado do projeto ⏳
+
 ---
 
 ## 5. Boas Práticas
