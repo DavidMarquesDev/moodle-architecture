@@ -1,0 +1,79 @@
+<form method="get" action="{{filteraction}}">
+    <div><label for="id_q">{{#str}}searchfield, local_hello{{/str}}</label></div>
+    <div><input id="id_q" type="text" name="q" value="{{query}}"></div>
+    <div><label for="id_sort">{{#str}}sortfield, local_hello{{/str}}</label></div>
+    <div>
+        <select id="id_sort" name="sort">
+            {{#sortoptions}}
+                <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+            {{/sortoptions}}
+        </select>
+    </div>
+    <div><label for="id_perpage">{{#str}}perpagefield, local_hello{{/str}}</label></div>
+    <div>
+        <select id="id_perpage" name="perpage">
+            {{#perpageoptions}}
+                <option value="{{value}}" {{#selected}}selected{{/selected}}>{{value}}</option>
+            {{/perpageoptions}}
+        </select>
+    </div>
+    <div>
+        <button type="submit">{{#str}}filterbutton, local_hello{{/str}}</button>
+        <a href="{{clearfilterurl}}">{{#str}}clearfilter, local_hello{{/str}}</a>
+    </div>
+</form>
+
+<form method="post" action="{{messageformaction}}">
+    <input type="hidden" name="sesskey" value="{{sesskey}}">
+    <input type="hidden" name="page" value="{{page}}">
+    <input type="hidden" name="messageid" value="{{messageid}}">
+    <input type="hidden" name="q" value="{{query}}">
+    <input type="hidden" name="sort" value="{{sort}}">
+    <input type="hidden" name="perpage" value="{{perpage}}">
+    <div><label for="id_message">{{#str}}messagefield, local_hello{{/str}}</label></div>
+    <div><textarea id="id_message" name="message" rows="4" cols="80">{{message}}</textarea></div>
+    {{#isediting}}
+        <div>
+            <button type="submit" name="save" value="1">{{#str}}updatebutton, local_hello{{/str}}</button>
+            <a href="{{cancelurl}}">{{#str}}cancelbutton, local_hello{{/str}}</a>
+        </div>
+    {{/isediting}}
+    {{^isediting}}
+        <div><button type="submit" name="save" value="1">{{#str}}savebutton, local_hello{{/str}}</button></div>
+    {{/isediting}}
+</form>
+
+<h3>{{#str}}mymessages, local_hello{{/str}}</h3>
+{{#hasrecords}}
+    <ul>
+        {{#records}}
+            <li>
+                {{time}} - {{message}}
+                <a href="{{editurl}}">{{#str}}editbutton, local_hello{{/str}}</a>
+                <form method="post" action="{{deleteaction}}" style="display:inline;">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="page" value="{{page}}">
+                    <input type="hidden" name="deleteid" value="{{deleteid}}">
+                    <input type="hidden" name="q" value="{{query}}">
+                    <input type="hidden" name="sort" value="{{sort}}">
+                    <input type="hidden" name="perpage" value="{{perpage}}">
+                    <button type="submit">{{#str}}deletebutton, local_hello{{/str}}</button>
+                </form>
+            </li>
+        {{/records}}
+    </ul>
+{{/hasrecords}}
+{{^hasrecords}}
+    <div>{{#str}}nomessages, local_hello{{/str}}</div>
+{{/hasrecords}}
+
+{{#haspagination}}
+    <div>
+        {{#hasprevious}}
+            <a href="{{previousurl}}">{{#str}}previouspage, local_hello{{/str}}</a>
+        {{/hasprevious}}
+        {{#hasnext}}
+            <a href="{{nexturl}}">{{#str}}nextpage, local_hello{{/str}}</a>
+        {{/hasnext}}
+    </div>
+{{/haspagination}}

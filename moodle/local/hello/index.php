@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+use local_hello\Application\DTO\MessageDeleteDTO;
+use local_hello\Application\DTO\MessageFilterDTO;
+use local_hello\Application\DTO\MessageSaveDTO;
+use local_hello\Infrastructure\Factory\MessageServiceFactory;
+use local_hello\Infrastructure\Support\UrlBuilder;
+use local_hello\Presentation\Presenter\MessagePagePresenter;
+
 require_once(__DIR__ . '/../../config.php');
 
 require_login();
@@ -8,37 +15,97 @@ require_login();
 $context = \context::instance_by_id(\context_system::instance()->id);
 require_capability('local/hello:view', $context);
 
-$PAGE->set_url('/local/hello/index.php');
+$messageservice = MessageServiceFactory::create($DB);
+$baseurl = $CFG->wwwroot . '/local/hello/index.php';
+$allowedperpages = [5, 10, 20, 50];
+$maxmessages = 100;
+$page = optional_param('page', 0, PARAM_INT);
+$page = max(0, $page);
+$query = trim(optional_param('q', '', PARAM_TEXT));
+$sort = $messageservice->normalizeSort(optional_param('sort', 'recent', PARAM_ALPHA));
+$requestedperpage = optional_param('perpage', 10, PARAM_INT);
+$perpage = $messageservice->normalizePerPage($requestedperpage, $allowedperpages);
+$message = optional_param('message', '', PARAM_TEXT);
+$messageid = optional_param('messageid', 0, PARAM_INT);
+$editid = optional_param('editid', 0, PARAM_INT);
+$deleteid = optional_param('deleteid', 0, PARAM_INT);
+$save = optional_param('save', 0, PARAM_BOOL);
+$error = '';
+$baseparams = ['q' => $query, 'sort' => $sort, 'perpage' => $perpage];
+$urlbuilder = new UrlBuilder();
+$presenter = new MessagePagePresenter($urlbuilder);
+
+$PAGE->set_url('/local/hello/index.php', array_merge($baseparams, ['page' => $page]));
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('pluginname', 'local_hello'));
 $PAGE->set_heading(get_string('pluginname', 'local_hello'));
 
-$message = optional_param('message', '', PARAM_TEXT);
-$save = optional_param('save', 0, PARAM_BOOL);
-$error = '';
-
-if ($save) {
+if ($deleteid > 0) {
     require_sesskey();
-    $message = trim($message);
-
-    if ($message === '') {
-        $error = get_string('emptymessage', 'local_hello');
+    $result = $messageservice->handleDelete(new MessageDeleteDTO((int) $USER->id, $deleteid));
+    if (isset($result['errorkey'])) {
+        $error = get_string($result['errorkey'], 'local_hello');
     } else {
-        $record = new \stdClass();
-        $record->userid = $USER->id;
-        $record->message = $message;
-        $record->timecreated = time();
-        $DB->insert_record('local_hello_messages', $record);
-
-        redirect('/local/hello/index.php', get_string('messagesaved', 'local_hello'));
+        redirect(
+            $urlbuilder->build($baseurl, array_merge($baseparams, ['page' => $page])),
+            get_string($result['successkey'], 'local_hello')
+        );
     }
 }
 
-$records = $DB->get_records(
-    'local_hello_messages',
-    ['userid' => $USER->id],
-    'timecreated DESC',
-    'id, message, timecreated'
+if ($save) {
+    require_sesskey();
+    $result = $messageservice->handleSave(
+        new MessageSaveDTO((int) $USER->id, $messageid, $message),
+        $maxmessages
+    );
+
+    if (isset($result['errorkey'])) {
+        if (isset($result['errordata'])) {
+            $error = get_string($result['errorkey'], 'local_hello', $result['errordata']);
+        } else {
+            $error = get_string($result['errorkey'], 'local_hello');
+        }
+    } else {
+        redirect(
+            $urlbuilder->build($baseurl, array_merge($baseparams, ['page' => $page])),
+            get_string($result['successkey'], 'local_hello')
+        );
+    }
+}
+
+if (!$save && $editid > 0) {
+    $editpayload = $messageservice->loadEditMessage($editid, (int) $USER->id);
+    if (isset($editpayload['errorkey'])) {
+        $error = get_string($editpayload['errorkey'], 'local_hello');
+    } else {
+        $message = $editpayload['message'];
+        $messageid = $editpayload['messageid'];
+    }
+}
+
+$listpayload = $messageservice->listMessages(
+    (int) $USER->id,
+    new MessageFilterDTO($page, $perpage, $query, $sort)
+);
+$records = $listpayload['records'];
+$totalrecords = $listpayload['totalrecords'];
+$maxpage = $listpayload['maxpage'];
+$page = $listpayload['page'];
+
+$templatedata = $presenter->buildTemplateData(
+    $baseurl,
+    $baseparams,
+    $query,
+    $sort,
+    $perpage,
+    $allowedperpages,
+    $page,
+    $maxpage,
+    $totalrecords,
+    $messageid,
+    $message,
+    $records
 );
 
 echo $OUTPUT->header();
@@ -49,23 +116,6 @@ if ($error !== '') {
     echo $OUTPUT->notification($error, 'notifyproblem');
 }
 
-echo '<form method="post" action="">';
-echo '<input type="hidden" name="sesskey" value="' . sesskey() . '">';
-echo '<div><label for="id_message">' . get_string('messagefield', 'local_hello') . '</label></div>';
-echo '<div><textarea id="id_message" name="message" rows="4" cols="80"></textarea></div>';
-echo '<div><button type="submit" name="save" value="1">' . get_string('savebutton', 'local_hello') . '</button></div>';
-echo '</form>';
-
-echo $OUTPUT->heading(get_string('mymessages', 'local_hello'), 3);
-
-if ($records === []) {
-    echo $OUTPUT->box(get_string('nomessages', 'local_hello'));
-} else {
-    echo '<ul>';
-    foreach ($records as $record) {
-        echo '<li>' . s(userdate((int) $record->timecreated)) . ' - ' . s($record->message) . '</li>';
-    }
-    echo '</ul>';
-}
+echo $OUTPUT->render_from_template('local_hello/page', $templatedata);
 
 echo $OUTPUT->footer();
