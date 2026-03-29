@@ -1,0 +1,37 @@
+services:
+    db:
+        image: mariadb:10.11
+        container_name: moodle_db
+        restart: unless-stopped
+        environment:
+            MARIADB_ROOT_PASSWORD: rootpass
+            MARIADB_DATABASE: moodle
+            MARIADB_USER: moodle
+            MARIADB_PASSWORD: moodle
+        volumes:
+            - moodle_db_data:/var/lib/mysql
+        networks:
+            - moodle_net
+
+    moodle:
+        image: moodlehq/moodle-php-apache:8.2
+        container_name: moodle_app
+        restart: unless-stopped
+        depends_on:
+            - db
+        ports:
+            - "8080:80"
+        volumes:
+            - ./moodle-core:/var/www/html
+            - moodle_moodledata:/var/www/moodledata
+            - ./moodle/local/hello:/var/www/html/local/hello
+        networks:
+            - moodle_net
+
+volumes:
+    moodle_db_data:
+    moodle_moodledata:
+
+networks:
+    moodle_net:
+        driver: bridge
