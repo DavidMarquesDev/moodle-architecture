@@ -23,25 +23,7 @@
     </div>
 </form>
 
-<form method="post" action="{{messageformaction}}">
-    <input type="hidden" name="sesskey" value="{{sesskey}}">
-    <input type="hidden" name="page" value="{{page}}">
-    <input type="hidden" name="messageid" value="{{messageid}}">
-    <input type="hidden" name="q" value="{{query}}">
-    <input type="hidden" name="sort" value="{{sort}}">
-    <input type="hidden" name="perpage" value="{{perpage}}">
-    <div><label for="id_message">{{#str}}messagefield, local_hello{{/str}}</label></div>
-    <div><textarea id="id_message" name="message" rows="4" cols="80">{{message}}</textarea></div>
-    {{#isediting}}
-        <div>
-            <button type="submit" name="save" value="1">{{#str}}updatebutton, local_hello{{/str}}</button>
-            <a href="{{cancelurl}}">{{#str}}cancelbutton, local_hello{{/str}}</a>
-        </div>
-    {{/isediting}}
-    {{^isediting}}
-        <div><button type="submit" name="save" value="1">{{#str}}savebutton, local_hello{{/str}}</button></div>
-    {{/isediting}}
-</form>
+{{{messageformhtml}}}
 
 <h3>{{#str}}mymessages, local_hello{{/str}}</h3>
 {{#hasrecords}}
@@ -77,3 +59,19 @@
         {{/hasnext}}
     </div>
 {{/haspagination}}
+
+<h3>{{#str}}ajaxmessages, local_hello{{/str}}</h3>
+<div>
+    <button
+        id="local-hello-load-messages"
+        type="button"
+        data-loading-text="{{#str}}loadingmessages, local_hello{{/str}}"
+        data-default-text="{{#str}}loadmessagesajax, local_hello{{/str}}"
+    >
+        {{#str}}loadmessagesajax, local_hello{{/str}}
+    </button>
+</div>
+<div
+    id="local-hello-ajax-list"
+    data-empty-text="{{#str}}nomessages, local_hello{{/str}}"
+></div>

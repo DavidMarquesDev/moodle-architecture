@@ -30,3 +30,6 @@ $string['perpagefield'] = 'Itens por página';
 $string['filterbutton'] = 'Aplicar filtros';
 $string['clearfilter'] = 'Limpar filtros';
 $string['messagelimitreached'] = 'Limite de {$a} mensagens por usuário atingido.';
+$string['ajaxmessages'] = 'Mensagens via AJAX';
+$string['loadmessagesajax'] = 'Carregar mensagens via AJAX';
+$string['loadingmessages'] = 'Carregando mensagens...';

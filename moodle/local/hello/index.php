@@ -4,6 +4,7 @@ declare(strict_types=1);
 use local_hello\Application\DTO\MessageDeleteDTO;
 use local_hello\Application\DTO\MessageFilterDTO;
 use local_hello\Application\DTO\MessageSaveDTO;
+use local_hello\form\message_form;
 use local_hello\Infrastructure\Factory\MessageServiceFactory;
 use local_hello\Infrastructure\Support\UrlBuilder;
 use local_hello\Presentation\Presenter\MessagePagePresenter;
@@ -25,11 +26,10 @@ $query = trim(optional_param('q', '', PARAM_TEXT));
 $sort = $messageservice->normalizeSort(optional_param('sort', 'recent', PARAM_ALPHA));
 $requestedperpage = optional_param('perpage', 10, PARAM_INT);
 $perpage = $messageservice->normalizePerPage($requestedperpage, $allowedperpages);
-$message = optional_param('message', '', PARAM_TEXT);
+$message = '';
 $messageid = optional_param('messageid', 0, PARAM_INT);
 $editid = optional_param('editid', 0, PARAM_INT);
 $deleteid = optional_param('deleteid', 0, PARAM_INT);
-$save = optional_param('save', 0, PARAM_BOOL);
 $error = '';
 $baseparams = ['q' => $query, 'sort' => $sort, 'perpage' => $perpage];
 $urlbuilder = new UrlBuilder();
@@ -39,6 +39,7 @@ $PAGE->set_url('/local/hello/index.php', array_merge($baseparams, ['page' => $pa
 $PAGE->set_context($context);
 $PAGE->set_title(get_string('pluginname', 'local_hello'));
 $PAGE->set_heading(get_string('pluginname', 'local_hello'));
+$PAGE->requires->js_call_amd('local_hello/messages', 'init');
 
 if ($deleteid > 0) {
     require_sesskey();
@@ -53,10 +54,39 @@ if ($deleteid > 0) {
     }
 }
 
-if ($save) {
-    require_sesskey();
+if ($editid > 0) {
+    $editpayload = $messageservice->loadEditMessage($editid, (int) $USER->id);
+    if (isset($editpayload['errorkey'])) {
+        $error = get_string($editpayload['errorkey'], 'local_hello');
+    } else {
+        $message = $editpayload['message'];
+        $messageid = $editpayload['messageid'];
+    }
+}
+
+$savebuttonlabel = $messageid > 0 ? get_string('updatebutton', 'local_hello') : get_string('savebutton', 'local_hello');
+$mform = new message_form(
+    $baseurl,
+    ['savebuttonlabel' => $savebuttonlabel],
+    'post'
+);
+$mform->set_data([
+    'messageid' => $messageid,
+    'message' => $message,
+    'page' => $page,
+    'q' => $query,
+    'sort' => $sort,
+    'perpage' => $perpage,
+]);
+
+if ($mform->is_cancelled()) {
+    redirect($urlbuilder->build($baseurl, array_merge($baseparams, ['page' => $page])));
+}
+
+$mformdata = $mform->get_data();
+if ($mformdata !== null) {
     $result = $messageservice->handleSave(
-        new MessageSaveDTO((int) $USER->id, $messageid, $message),
+        new MessageSaveDTO((int) $USER->id, (int) $mformdata->messageid, (string) $mformdata->message),
         $maxmessages
     );
 
@@ -66,21 +96,13 @@ if ($save) {
         } else {
             $error = get_string($result['errorkey'], 'local_hello');
         }
+        $message = (string) $mformdata->message;
+        $messageid = (int) $mformdata->messageid;
     } else {
         redirect(
             $urlbuilder->build($baseurl, array_merge($baseparams, ['page' => $page])),
             get_string($result['successkey'], 'local_hello')
         );
-    }
-}
-
-if (!$save && $editid > 0) {
-    $editpayload = $messageservice->loadEditMessage($editid, (int) $USER->id);
-    if (isset($editpayload['errorkey'])) {
-        $error = get_string($editpayload['errorkey'], 'local_hello');
-    } else {
-        $message = $editpayload['message'];
-        $messageid = $editpayload['messageid'];
     }
 }
 
@@ -107,6 +129,10 @@ $templatedata = $presenter->buildTemplateData(
     $message,
     $records
 );
+
+ob_start();
+$mform->display();
+$templatedata['messageformhtml'] = ob_get_clean();
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('welcome', 'local_hello'));
