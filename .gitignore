@@ -18,6 +18,7 @@
 docker-compose.override.yml
 docker-compose.local.yml
 moodledata/
+moodle-core/
 .idea/
 .vscode/
 *.log
