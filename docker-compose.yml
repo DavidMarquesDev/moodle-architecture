@@ -22,7 +22,7 @@ services:
         ports:
             - "8080:80"
         volumes:
-            - ./moodle-core:/var/www/html
+            - ../moodle-core:/var/www/html
             - moodle_moodledata:/var/www/moodledata
             - ./moodle/local/hello:/var/www/html/local/hello
         networks:
