@@ -22,11 +22,12 @@ services:
         ports:
             - "8080:80"
         volumes:
-            - ./moodle-base:/var/www/html
-            - ../moodle-core/blocks/meu_dashboard:/var/www/html/blocks/meu_dashboard
-            - ../moodle-core/mod/videoaula:/var/www/html/mod/videoaula
+            - ./moodle-base:/var/www/html:delegated
+            - ../moodle-core/blocks/meu_dashboard:/var/www/html/blocks/meu_dashboard:delegated
+            - ../moodle-core/mod/videoaula:/var/www/html/mod/videoaula:delegated
             - moodle_moodledata:/var/www/moodledata
-            - ./moodle/local/hello:/var/www/html/local/hello
+            - ./moodle/local/hello:/var/www/html/local/hello:delegated
+            - ./docker/php/conf.d/performance.ini:/usr/local/etc/php/conf.d/99-performance.ini:ro
         networks:
             - moodle_net
 
